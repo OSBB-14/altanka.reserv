@@ -133,9 +133,10 @@ function render(){
 
     let div = document.createElement("div");
     div.className = "day " + (bookedDates.includes(date) ? "booked" : "free");
-    div.innerHTML = bookedDates.includes(date)
-  ? d + "<br><small>📞 є бронь</small>"
-  : d;
+    const booking = bookings.find(b => b.date === date);
+    div.innerHTML = booking
+    ? d + "<br><small>🏠 " + booking.apartment + "</small>"
+    : d;
 
     if(!bookedDates.includes(date)){
       div.onclick = async () => {
