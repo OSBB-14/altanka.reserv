@@ -86,6 +86,7 @@ let currentYear = today.getFullYear();
 let bookings = [];
 
 async function loadBookings(){
+
   let res = await fetch(SUPABASE_URL + "/rest/v1/bookings?select=*", {
     headers:{
       apikey: SUPABASE_KEY,
@@ -112,7 +113,7 @@ function render(){
   let firstDay = new Date(currentYear, currentMonth, 1).getDay();
   let daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
 
-  let bookedDates = bookings.map(b => b.date);
+  const bookingMap = new Map(bookings.map(b => [b.date, b]));
 
   const weekdays = ["Пн","Вт","Ср","Чт","Пт","Сб","Нд"];
 
@@ -131,14 +132,16 @@ function render(){
 
     let date = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 
-    let div = document.createElement("div");
-    div.className = "day " + (bookedDates.includes(date) ? "booked" : "free");
-    const booking = bookings.find(b => b.date === date);
-    div.innerHTML = booking
-    ? d + "<br><small>🏠 " + booking.apartment + "<br>📞 " + booking.phone + "</small>"
-    : d;
+    const booking = bookingMap.get(date);
 
-    if(!bookedDates.includes(date)){
+    let div = document.createElement("div");
+    div.className = "day " + (booking ? "booked" : "free");
+
+    div.innerHTML = booking
+      ? d + "<br><small>🏠 " + booking.apartment + "<br>📞 " + booking.phone + "</small>"
+      : d;
+
+    if(!booking){
       div.onclick = async () => {
 
         let apartment = prompt("Квартира:");
@@ -155,11 +158,11 @@ function render(){
           body: JSON.stringify({date, apartment, name, phone})
         });
 
-        if(res.status === 409 || !res.ok){
-  alert("❌ Дата вже зайнята");
-  loadBookings();
-  return;
-}
+        if(!res.ok){
+          alert("❌ Дата вже зайнята");
+          return;
+        }
+
         loadBookings();
       }
     }
@@ -174,7 +177,7 @@ function nextMonth(){
     currentMonth=0;
     currentYear++;
   }
-  render();
+  loadBookings(); // 🔥 FIX
 }
 
 function prevMonth(){
@@ -183,7 +186,7 @@ function prevMonth(){
     currentMonth=11;
     currentYear--;
   }
-  render();
+  loadBookings(); // 🔥 FIX
 }
 
 loadBookings();
