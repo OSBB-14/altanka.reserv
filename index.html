@@ -135,7 +135,7 @@ function render(){
     div.className = "day " + (bookedDates.includes(date) ? "booked" : "free");
     const booking = bookings.find(b => b.date === date);
     div.innerHTML = booking
-    ? d + "<br><small>🏠 " + booking.apartment + "</small>"
+    ? d + "<br><small>🏠 " + booking.apartment + "<br>📞 " + booking.phone + "</small>"
     : d;
 
     if(!bookedDates.includes(date)){
