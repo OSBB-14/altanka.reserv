@@ -155,11 +155,11 @@ function render(){
           body: JSON.stringify({date, apartment, name, phone})
         });
 
-        if(!res.ok){
-          alert("❌ Дата вже зайнята");
-          return;
-        }
-
+        if(res.status === 409 || !res.ok){
+  alert("❌ Дата вже зайнята");
+  loadBookings();
+  return;
+}
         loadBookings();
       }
     }
