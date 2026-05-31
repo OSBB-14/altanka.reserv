@@ -133,13 +133,16 @@ function render(){
 
     let div = document.createElement("div");
     div.className = "day " + (bookedDates.includes(date) ? "booked" : "free");
-    div.innerHTML = d;
+    div.innerHTML = bookedDates.includes(date)
+  ? d + "<br><small>📞 є бронь</small>"
+  : d;
 
     if(!bookedDates.includes(date)){
       div.onclick = async () => {
 
         let apartment = prompt("Квартира:");
         let name = prompt("Ім'я:");
+        let phone = prompt("Телефон:");
 
         let res = await fetch(SUPABASE_URL + "/rest/v1/bookings", {
           method:"POST",
@@ -148,7 +151,7 @@ function render(){
             Authorization: "Bearer " + SUPABASE_KEY,
             "Content-Type":"application/json"
           },
-          body: JSON.stringify({date, apartment, name})
+          body: JSON.stringify({date, apartment, name, phone})
         });
 
         if(!res.ok){
