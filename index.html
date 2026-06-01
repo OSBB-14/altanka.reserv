@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>Альтанка Booking PRO</title>
 
+<script src="https://unpkg.com/@supabase/supabase-js"></script>
+
 <style>
 body{
   font-family: Arial;
@@ -59,6 +61,24 @@ button{
   font-size:12px;
   opacity:0.6;
 }
+
+/* 🔥 toast */
+.toast{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#222;
+  color:white;
+  padding:12px 20px;
+  border-radius:8px;
+  opacity:0;
+  transition:0.3s;
+}
+
+.toast.show{
+  opacity:1;
+}
 </style>
 </head>
 
@@ -74,27 +94,37 @@ button{
 
 <div class="calendar" id="calendar"></div>
 
+<div id="toast" class="toast"></div>
+
 <script>
 
 const SUPABASE_URL = "https://dsnnotagqmjexhxoemzg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JHN_dMmICNsmBCpniC81xw_WVCiRD7u";
+
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let today = new Date();
 let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
 
 let bookings = [];
+let lastChangeDate = null;
+
+const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+
+function showToast(text){
+  const t = document.getElementById("toast");
+  t.innerText = text;
+  t.classList.add("show");
+
+  setTimeout(()=>{
+    t.classList.remove("show");
+  }, 3000);
+}
 
 async function loadBookings(){
-
-  let res = await fetch(SUPABASE_URL + "/rest/v1/bookings?select=*", {
-    headers:{
-      apikey: SUPABASE_KEY,
-      Authorization: "Bearer " + SUPABASE_KEY
-    }
-  });
-
-  bookings = await res.json();
+  let { data } = await client.from("bookings").select("*");
+  bookings = data || [];
   render();
 }
 
@@ -137,6 +167,10 @@ function render(){
     let div = document.createElement("div");
     div.className = "day " + (booking ? "booked" : "free");
 
+    if(date === lastChangeDate){
+      div.style.border = "3px solid #000";
+    }
+
     div.innerHTML = booking
       ? d + "<br><small>🏠 " + booking.apartment + "<br>📞 " + booking.phone + "</small>"
       : d;
@@ -148,22 +182,14 @@ function render(){
         let name = prompt("Ім'я:");
         let phone = prompt("Телефон:");
 
-        let res = await fetch(SUPABASE_URL + "/rest/v1/bookings", {
-          method:"POST",
-          headers:{
-            apikey: SUPABASE_KEY,
-            Authorization: "Bearer " + SUPABASE_KEY,
-            "Content-Type":"application/json"
-          },
-          body: JSON.stringify({date, apartment, name, phone})
-        });
+        let { error } = await client
+          .from("bookings")
+          .insert([{date, apartment, name, phone}]);
 
-        if(!res.ok){
-          alert("❌ Дата вже зайнята");
+        if(error){
+          showToast("❌ Дата вже зайнята");
           return;
         }
-
-        loadBookings();
       }
     }
 
@@ -171,13 +197,31 @@ function render(){
   }
 }
 
+// 🔥 realtime
+client
+  .channel("bookings-live")
+  .on(
+    "postgres_changes",
+    { event: "INSERT", schema: "public", table: "bookings" },
+    payload => {
+
+      lastChangeDate = payload.new.date;
+
+      audio.play();
+      showToast("⚡ Нове бронювання: " + payload.new.date);
+
+      loadBookings();
+    }
+  )
+  .subscribe();
+
 function nextMonth(){
   currentMonth++;
   if(currentMonth>11){
     currentMonth=0;
     currentYear++;
   }
-  loadBookings(); // 🔥 FIX
+  render();
 }
 
 function prevMonth(){
@@ -186,30 +230,10 @@ function prevMonth(){
     currentMonth=11;
     currentYear--;
   }
-  loadBookings(); // 🔥 FIX
+  render();
 }
 
-let lastData = "";
-
-async function loadBookings(){
-
-  let res = await fetch(SUPABASE_URL + "/rest/v1/bookings?select=*", {
-    headers:{
-      apikey: SUPABASE_KEY,
-      Authorization: "Bearer " + SUPABASE_KEY
-    }
-  });
-
-  let data = await res.json();
-
-  let json = JSON.stringify(data);
-
-  if(json !== lastData){
-    bookings = data;
-    lastData = json;
-    render();
-  }
-}
+loadBookings();
 
 </script>
 
