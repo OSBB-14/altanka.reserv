@@ -2,55 +2,142 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Адмінка альтанки</title>
+<title>🔐 Адмінка альтанки</title>
+
 <style>
-body{font-family:Arial;background:#f6f7fb;text-align:center;padding:20px}
-.box{background:white;max-width:430px;margin:20px auto;padding:20px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-input,select,button{width:100%;box-sizing:border-box;padding:12px;margin-top:10px;border-radius:8px;border:1px solid #ccc;font-size:16px}
+body{font-family:Arial,sans-serif;background:#f6f7fb;margin:0;padding:20px;text-align:center}
+h2{margin-top:10px}
+.panel{background:white;max-width:1000px;margin:15px auto;padding:18px;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.08);text-align:left}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+input,select,button{width:100%;box-sizing:border-box;padding:11px;margin-top:8px;border-radius:8px;border:1px solid #ccc;font-size:15px}
 button{background:#222;color:white;border:none;cursor:pointer}
-.success{color:green;font-weight:bold}
-.error{color:red;font-weight:bold}
+button.danger{background:#c0392b}
+button.good{background:#1f8f4d}
+button.gray{background:#777}
+table{width:100%;border-collapse:collapse;margin-top:12px;background:white}
+th,td{border:1px solid #ddd;padding:8px;text-align:left;font-size:14px}
+th{background:#eee}
+.msg{font-weight:bold;margin-top:10px}
+.success{color:green}
+.error{color:red}
+.small{font-size:13px;color:#666}
 </style>
 </head>
+
 <body>
 
-<h2>🔐 Адмінка бронювання альтанки</h2>
+<h2>🔐 Адмін-панель бронювання альтанки</h2>
 
-<div class="box">
-  <input id="adminCode" type="password" placeholder="Адмін-код">
+<div class="panel">
+  <label><b>Адмін-код</b></label>
+  <input id="adminCode" type="password" placeholder="Введіть адмін-код">
+  <p class="small">Адмін-код потрібен для зміни даних. Перегляд також бажано робити тільки відповідальним особам.</p>
+</div>
 
-  <select id="listType">
-    <option value="debtors">Боржники</option>
-    <option value="blacklist">Чорний список</option>
-  </select>
+<div class="panel">
+  <h3>📅 Бронювання</h3>
+  <button onclick="loadBookings()">Оновити список бронювань</button>
+  <div id="bookingsTable"></div>
+</div>
 
-  <input id="apartment" type="text" placeholder="Номер квартири">
-  <input id="reason" type="text" placeholder="Причина">
+<div class="panel">
+  <h3>💳 Боржники</h3>
 
-  <button onclick="manage('add')">Додати</button>
-  <button onclick="manage('remove')">Видалити</button>
+  <div class="grid">
+    <div>
+      <input id="debtorApartment" placeholder="Номер квартири">
+    </div>
+    <div>
+      <input id="debtorReason" placeholder="Причина / коментар">
+    </div>
+    <div>
+      <button class="danger" onclick="adminAction('add_debtor')">Додати в боржники</button>
+    </div>
+    <div>
+      <button class="gray" onclick="adminAction('remove_debtor')">Прибрати з боржників</button>
+    </div>
+  </div>
 
-  <p id="msg"></p>
+  <button style="margin-top:12px" onclick="loadDebtors()">Оновити список боржників</button>
+  <div id="debtorsTable"></div>
+</div>
+
+<div class="panel">
+  <h3>⛔ Чорний список</h3>
+
+  <div class="grid">
+    <div>
+      <input id="blackApartment" placeholder="Номер квартири">
+    </div>
+    <div>
+      <input id="blackReason" placeholder="Причина / коментар">
+    </div>
+    <div>
+      <button class="danger" onclick="adminAction('add_blacklist')">Додати в чорний список</button>
+    </div>
+    <div>
+      <button class="gray" onclick="adminAction('remove_blacklist')">Прибрати з чорного списку</button>
+    </div>
+  </div>
+
+  <button style="margin-top:12px" onclick="loadBlacklist()">Оновити чорний список</button>
+  <div id="blacklistTable"></div>
+</div>
+
+<div class="panel">
+  <p id="msg" class="msg"></p>
 </div>
 
 <script>
 const SUPABASE_URL = "https://dsnnotagqmjexhxoemzg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JHN_dMmICNsmBCpniC81xw_WVCiRD7u";
 
-async function manage(action){
-  const adminCode = document.getElementById("adminCode").value.trim();
-  const list = document.getElementById("listType").value;
-  const apartment = document.getElementById("apartment").value.trim();
-  const reason = document.getElementById("reason").value.trim();
-  const msg = document.getElementById("msg");
+function getAdminCode(){
+  return document.getElementById("adminCode").value.trim();
+}
 
-  if(!adminCode || !apartment){
-    msg.className = "error";
-    msg.innerText = "Заповніть адмін-код і номер квартири";
+function normalizeApartment(v){
+  return String(v || "").trim().replace(/\D/g, "");
+}
+
+function setMsg(text, type){
+  const msg = document.getElementById("msg");
+  msg.innerText = text;
+  msg.className = "msg " + type;
+}
+
+async function adminAction(action, extra = {}){
+  const adminCode = getAdminCode();
+
+  if(!adminCode){
+    setMsg("Введіть адмін-код", "error");
     return;
   }
 
-  const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/admin_manage_list", {
+  let apartment = "";
+  let reason = "";
+  let date = null;
+
+  if(action.includes("debtor")){
+    apartment = normalizeApartment(document.getElementById("debtorApartment").value);
+    reason = document.getElementById("debtorReason").value.trim();
+  }
+
+  if(action.includes("blacklist")){
+    apartment = normalizeApartment(document.getElementById("blackApartment").value);
+    reason = document.getElementById("blackReason").value.trim();
+  }
+
+  if(action === "delete_booking"){
+    date = extra.date;
+  }
+
+  if(action !== "delete_booking" && !apartment){
+    setMsg("Вкажіть номер квартири", "error");
+    return;
+  }
+
+  const res = await fetch(SUPABASE_URL + "/rest/v1/rpc/admin_action", {
     method:"POST",
     headers:{
       apikey: SUPABASE_KEY,
@@ -59,30 +146,139 @@ async function manage(action){
     },
     body: JSON.stringify({
       p_admin_code: adminCode,
-      p_list: list,
       p_action: action,
       p_apartment: apartment,
-      p_reason: reason
+      p_reason: reason,
+      p_date: date
     })
   });
 
   const text = await res.text();
 
   if(text.includes("ACCESS_DENIED")){
-    msg.className = "error";
-    msg.innerText = "Невірний адмін-код";
+    setMsg("Невірний адмін-код", "error");
     return;
   }
 
   if(!res.ok || !text.includes("OK")){
-    msg.className = "error";
-    msg.innerText = "Помилка виконання";
+    setMsg("Помилка виконання: " + text, "error");
     return;
   }
 
-  msg.className = "success";
-  msg.innerText = action === "add" ? "Додано успішно" : "Видалено успішно";
+  setMsg("Операцію виконано успішно", "success");
+
+  loadBookings();
+  loadDebtors();
+  loadBlacklist();
 }
+
+async function loadBookings(){
+  const res = await fetch(SUPABASE_URL + "/rest/v1/bookings?select=*&order=date.asc", {
+    headers:{
+      apikey: SUPABASE_KEY,
+      Authorization:"Bearer " + SUPABASE_KEY
+    }
+  });
+
+  const data = await res.json();
+
+  let html = `
+    <table>
+      <tr>
+        <th>Дата</th>
+        <th>Квартира</th>
+        <th>Ім’я</th>
+        <th>Телефон</th>
+        <th>Дія</th>
+      </tr>
+  `;
+
+  data.forEach(b=>{
+    html += `
+      <tr>
+        <td>${b.date || ""}</td>
+        <td>${b.apartment || ""}</td>
+        <td>${b.name || ""}</td>
+        <td>${b.phone || ""}</td>
+        <td><button class="danger" onclick="deleteBooking('${b.date}')">Видалити</button></td>
+      </tr>
+    `;
+  });
+
+  html += `</table>`;
+  document.getElementById("bookingsTable").innerHTML = html;
+}
+
+function deleteBooking(date){
+  if(!confirm("Видалити бронювання на дату " + date + "?")) return;
+  adminAction("delete_booking", {date});
+}
+
+async function loadDebtors(){
+  const res = await fetch(SUPABASE_URL + "/rest/v1/debtors?select=*&order=apartment.asc", {
+    headers:{
+      apikey: SUPABASE_KEY,
+      Authorization:"Bearer " + SUPABASE_KEY
+    }
+  });
+
+  const data = await res.json();
+
+  let html = `
+    <table>
+      <tr>
+        <th>Квартира</th>
+        <th>Причина</th>
+      </tr>
+  `;
+
+  data.forEach(row=>{
+    html += `
+      <tr>
+        <td>${row.apartment || ""}</td>
+        <td>${row.reason || ""}</td>
+      </tr>
+    `;
+  });
+
+  html += `</table>`;
+  document.getElementById("debtorsTable").innerHTML = html;
+}
+
+async function loadBlacklist(){
+  const res = await fetch(SUPABASE_URL + "/rest/v1/blacklist?select=*&order=apartment.asc", {
+    headers:{
+      apikey: SUPABASE_KEY,
+      Authorization:"Bearer " + SUPABASE_KEY
+    }
+  });
+
+  const data = await res.json();
+
+  let html = `
+    <table>
+      <tr>
+        <th>Квартира</th>
+        <th>Причина</th>
+      </tr>
+  `;
+
+  data.forEach(row=>{
+    html += `
+      <tr>
+        <td>${row.apartment || ""}</td>
+        <td>${row.reason || ""}</td>
+      </tr>
+    `;
+  });
+
+  html += `</table>`;
+  document.getElementById("blacklistTable").innerHTML = html;
+}
+
+loadBookings();
+loadDebtors();
+loadBlacklist();
 </script>
 
 </body>
