@@ -2,9 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Альтанка Booking PRO</title>
-
-<script src="https://unpkg.com/@supabase/supabase-js"></script>
+<title>🏡 Альтанка Booking PRO</title>
 
 <style>
 body{
@@ -24,29 +22,33 @@ h2{ margin-top:20px; }
 }
 
 button{
-  padding:8px 12px;
+  padding:10px 16px;
   border:none;
   background:#222;
   color:white;
-  border-radius:6px;
+  border-radius:8px;
   cursor:pointer;
 }
 
 .calendar{
   display:grid;
   grid-template-columns: repeat(7, 1fr);
-  gap:6px;
-  max-width:500px;
+  gap:10px;
+  max-width:700px;
   margin:20px auto;
 }
 
 .day{
   background:white;
-  border-radius:10px;
-  padding:14px;
+  border-radius:12px;
+  padding:12px;
+  min-height:100px;
   cursor:pointer;
   border:1px solid #ddd;
   transition:0.2s;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
 }
 
 .day:hover{
@@ -55,30 +57,54 @@ button{
 
 .free{ background:#d6f5d6; }
 .booked{ background:#ffb3b3; pointer-events:none; }
+.disabled{ background:#eee; pointer-events:none; }
+
+.day-number{
+  font-weight:bold;
+  font-size:16px;
+}
+
+.info{
+  font-size:12px;
+  margin-top:5px;
+  text-align:left;
+}
 
 .weekday{
   font-weight:bold;
-  font-size:12px;
+  font-size:13px;
   opacity:0.6;
 }
 
-/* 🔥 toast */
+/* Інструкція */
+.instructions{
+  max-width:700px;
+  margin:20px auto;
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  text-align:left;
+  font-size:14px;
+  line-height:1.5;
+}
+
+/* toast */
 .toast{
   position:fixed;
   bottom:20px;
   left:50%;
   transform:translateX(-50%);
-  background:#222;
-  color:white;
   padding:12px 20px;
   border-radius:8px;
+  color:white;
   opacity:0;
   transition:0.3s;
 }
+.toast.show{ opacity:1; }
 
-.toast.show{
-  opacity:1;
-}
+.success{ background:#2ecc71; }
+.error{ background:#e74c3c; }
+
 </style>
 </head>
 
@@ -94,37 +120,55 @@ button{
 
 <div class="calendar" id="calendar"></div>
 
+<!-- ІНСТРУКЦІЯ -->
+<div class="instructions">
+<b>📋 Правила користування альтанкою:</b><br><br>
+
+✔ Кожна квартира може забронювати не більше <b>2 днів на місяць</b>.<br>
+✔ Бронювання доступне тільки на <b>14 днів наперед</b>.<br>
+✔ Один день може бути заброньований тільки <b>однією квартирою</b>.<br>
+✔ Бронювання здійснюється шляхом натискання на вільну дату та заповнення даних.<br>
+✔ Заборонено вносити неправдиву інформацію.<br>
+✔ У разі змін — прохання повідомляти відповідальних осіб.<br><br>
+
+<b>🔑 Отримання ключа від альтанки:</b><br><br>
+
+Андрій — кв. 120<br>
+Юрій — кв. 157<br>
+Дмитро — кв. 140<br><br>
+
+Дякуємо за дотримання порядку 🙌
+</div>
+
 <div id="toast" class="toast"></div>
 
 <script>
 
 const SUPABASE_URL = "https://dsnnotagqmjexhxoemzg.supabase.co";
-const SUPABASE_KEY = "sb_publishable_JHN_dMmICNsmBCpniC81xw_WVCiRD7u";
-
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = "ТУТ_ТВІЙ_KEY";
 
 let today = new Date();
 let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
 
 let bookings = [];
-let lastChangeDate = null;
 
-const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-
-function showToast(text){
-  const t = document.getElementById("toast");
-  t.innerText = text;
-  t.classList.add("show");
-
-  setTimeout(()=>{
-    t.classList.remove("show");
-  }, 3000);
+function showToast(msg, type=""){
+  let t = document.getElementById("toast");
+  t.innerText = msg;
+  t.className = "toast show " + type;
+  setTimeout(()=> t.className = "toast", 3000);
 }
 
 async function loadBookings(){
-  let { data } = await client.from("bookings").select("*");
-  bookings = data || [];
+  let res = await fetch(SUPABASE_URL + "/rest/v1/bookings?select=*", {
+    headers:{
+      apikey: SUPABASE_KEY,
+      Authorization: "Bearer " + SUPABASE_KEY
+    }
+  });
+
+  bookings = await res.json();
   render();
 }
 
@@ -143,8 +187,6 @@ function render(){
   let firstDay = new Date(currentYear, currentMonth, 1).getDay();
   let daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
 
-  const bookingMap = new Map(bookings.map(b => [b.date, b]));
-
   const weekdays = ["Пн","Вт","Ср","Чт","Пт","Сб","Нд"];
 
   weekdays.forEach(d=>{
@@ -154,66 +196,81 @@ function render(){
     cal.appendChild(div);
   });
 
-  for(let i=0;i<firstDay-1;i++){
+  for(let i=0;i<(firstDay===0?6:firstDay-1);i++){
     cal.appendChild(document.createElement("div"));
   }
+
+  let maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 14);
 
   for(let d=1; d<=daysInMonth; d++){
 
     let date = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    let dateObj = new Date(date);
 
-    const booking = bookingMap.get(date);
+    const booking = bookings.find(b => b.date === date);
 
     let div = document.createElement("div");
-    div.className = "day " + (booking ? "booked" : "free");
 
-    if(date === lastChangeDate){
-      div.style.border = "3px solid #000";
+    let isBooked = !!booking;
+    let isTooFar = dateObj > maxDate;
+    let isPast = dateObj < new Date().setHours(0,0,0,0);
+
+    if(isBooked) div.className="day booked";
+    else if(isTooFar || isPast) div.className="day disabled";
+    else div.className="day free";
+
+    let content = `<div class="day-number">${d}</div>`;
+
+    if(booking){
+      content += `
+        <div class="info">
+          🏠 ${booking.apartment}<br>
+          👤 ${booking.name}<br>
+          📞 ${booking.phone}
+        </div>
+      `;
     }
 
-    div.innerHTML = booking
-      ? d + "<br><small>🏠 " + booking.apartment + "<br>📞 " + booking.phone + "</small>"
-      : d;
+    div.innerHTML = content;
 
-    if(!booking){
+    if(!isBooked && !isTooFar && !isPast){
       div.onclick = async () => {
 
         let apartment = prompt("Квартира:");
+        if(!apartment) return;
+
         let name = prompt("Ім'я:");
+        if(!name) return;
+
         let phone = prompt("Телефон:");
+        if(!phone) return;
 
-        let { error } = await client
-          .from("bookings")
-          .insert([{date, apartment, name, phone}]);
+        let res = await fetch(SUPABASE_URL + "/rest/v1/bookings", {
+          method:"POST",
+          headers:{
+            apikey: SUPABASE_KEY,
+            Authorization: "Bearer " + SUPABASE_KEY,
+            "Content-Type":"application/json"
+          },
+          body: JSON.stringify({date, apartment, name, phone})
+        });
 
-        if(error){
-          showToast("❌ Дата вже зайнята");
+        if(!res.ok){
+          let error = await res.text();
+          showToast(error, "error");
+          loadBookings();
           return;
         }
+
+        showToast("✅ Заброньовано!", "success");
+        loadBookings();
       }
     }
 
     cal.appendChild(div);
   }
 }
-
-// 🔥 realtime
-client
-  .channel("bookings-live")
-  .on(
-    "postgres_changes",
-    { event: "INSERT", schema: "public", table: "bookings" },
-    payload => {
-
-      lastChangeDate = payload.new.date;
-
-      audio.play();
-      showToast("⚡ Нове бронювання: " + payload.new.date);
-
-      loadBookings();
-    }
-  )
-  .subscribe();
 
 function nextMonth(){
   currentMonth++;
@@ -233,6 +290,7 @@ function prevMonth(){
   render();
 }
 
+setInterval(loadBookings, 3000);
 loadBookings();
 
 </script>
