@@ -194,18 +194,22 @@ async function loadBookings(){
   render();
 }
 
-function validatePhone(phone){
+function normalizePhone(phone){
 
-  // прибираємо пробіли
-  phone = phone.replace(/\s/g, '');
+  // прибираємо все крім цифр і +
+  phone = phone.replace(/[^\d+]/g, '');
 
-  // +380XXXXXXXXX
-  const format1 = /^\+380\d{9}$/;
+  // якщо починається з 0
+  if(/^0\d{9}$/.test(phone)){
+    return "+38" + phone;
+  }
 
-  // 0XXXXXXXXX
-  const format2 = /^0\d{9}$/;
+  // якщо вже +380
+  if(/^\+380\d{9}$/.test(phone)){
+    return phone;
+  }
 
-  return format1.test(phone) || format2.test(phone);
+  return null;
 }
 
 async function createBooking(date){
@@ -221,18 +225,18 @@ async function createBooking(date){
     return;
   }
 
-  let phone = prompt("Вкажіть телефон у форматі +380XXXXXXXXX:");
-  if(!phone || !phone.trim()){
-    showToast("❌ Телефон обов’язковий", "error");
-    return;
-  }
+  let phone = prompt("Вкажіть телефон:");
+if(!phone || !phone.trim()){
+  showToast("❌ Телефон обов’язковий", "error");
+  return;
+}
 
-  phone = phone.trim();
+phone = normalizePhone(phone);
 
-  if(!validatePhone(phone)){
-    showToast("❌ Телефон має бути у форматі +380XXXXXXXXX", "error");
-    return;
-  }
+if(!phone){
+  showToast("❌ Невірний номер телефону", "error");
+  return;
+}
 
   let res = await fetch(SUPABASE_URL + "/rest/v1/bookings", {
     method:"POST",
