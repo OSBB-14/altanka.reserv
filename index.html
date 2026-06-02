@@ -28,6 +28,7 @@ button{padding:10px 16px;border:none;background:#222;color:white;border-radius:8
 .modal h3{text-align:center;margin-top:0}
 .modal label{display:block;margin-top:12px;font-weight:bold}
 .modal input{width:100%;box-sizing:border-box;padding:12px;margin-top:6px;border:1px solid #ccc;border-radius:8px;font-size:16px}
+.modal small{display:block;margin-top:5px;color:#666}
 .modal-actions{display:flex;gap:10px;margin-top:18px}
 .modal-actions button{flex:1}
 .cancel{background:#777}
@@ -58,24 +59,46 @@ button{padding:10px 16px;border:none;background:#222;color:white;border-radius:8
 <div class="calendar" id="calendar"></div>
 
 <div class="instructions">
-  <b>📋 Правила бронювання та користування альтанкою:</b><br><br>
-  ✔ Бронювання доступне лише для співвласників / мешканців будинку.<br>
-  ✔ Один день може бути заброньований тільки однією квартирою.<br>
+  <b>📋 Інструкція з бронювання альтанки</b><br><br>
+
+  <b>Як забронювати:</b><br>
+  1. Оберіть у календарі вільну зелену дату.<br>
+  2. Натисніть на дату.<br>
+  3. Заповніть усі поля: номер квартири, ім’я, телефон та PIN-код.<br>
+  4. PIN-код має складатися з <b>4 цифр</b>. Збережіть його — він потрібен для скасування бронювання.<br>
+  5. Після успішного бронювання дата стане червоною та буде недоступною для інших мешканців.<br><br>
+
+  <b>Як скасувати бронювання:</b><br>
+  1. Натисніть кнопку <b>“Скасувати бронь”</b> над календарем.<br>
+  2. Вкажіть дату бронювання, телефон та PIN-код, які були вказані при бронюванні.<br>
+  3. Якщо дані співпадають, бронювання буде скасовано, а дата знову стане доступною.<br><br>
+
+  <b>Правила бронювання:</b><br>
+  ✔ Один день може бути заброньований тільки <b>однією квартирою</b>.<br>
   ✔ Одна квартира може забронювати не більше <b>2 днів на місяць</b>.<br>
   ✔ Бронювання доступне максимум на <b>14 днів наперед</b>.<br>
-  ✔ Для бронювання необхідно заповнити всі поля: номер квартири, ім’я та телефон.<br>
+  ✔ Минулі дати та дати далі ніж на 14 днів недоступні для бронювання.<br>
+  ✔ Для бронювання потрібно вказати достовірні дані.<br>
   ✔ Телефон можна вказувати у форматі <b>+380XXXXXXXXX</b> або <b>0XXXXXXXXX</b>.<br>
   ✔ Бронювання боржникам по квартплаті не надається.<br>
-  ✔ У разі неявки та нескасування броні завчасно квартира може бути внесена до чорного списку, і в подальшому їй може бути відмовлено в бронюванні.<br>
-  ✔ Після користування альтанкою необхідно прибрати після себе та винести сміття.<br>
-  ✔ Заборонено вносити неправдиві дані або бронювати від імені іншої квартири.<br><br>
+  ✔ Заборонено бронювати альтанку від імені іншої квартири.<br><br>
 
-  <b>🔑 Ключ від альтанки можна отримати у:</b><br><br>
-  Андрій — кв. 120<br>
-  Юрій — кв. 157<br>
-  Дмитро — кв. 140<br><br>
+  <b>Обов’язки після користування:</b><br>
+  ✔ Після відпочинку необхідно прибрати після себе.<br>
+  ✔ Сміття потрібно винести самостійно.<br>
+  ✔ Альтанку необхідно залишити у чистому та належному стані.<br><br>
 
-  Дякуємо за дотримання порядку 🙌
+  <b>Відповідальність:</b><br>
+  ✔ У разі неявки без завчасного скасування броні квартира може бути внесена до чорного списку.<br>
+  ✔ У разі залишення сміття, пошкодження майна або порушення правил квартира також може бути внесена до чорного списку.<br>
+  ✔ Квартирі з чорного списку в подальшому може бути відмовлено в бронюванні альтанки.<br><br>
+
+  <b>🔑 Де отримати ключ від альтанки:</b><br><br>
+  Андрій — кв. 120 тел.: +380971840275<br>
+  Юрій — кв. 157 тел.: +380673832350<br>
+  Дмитро — кв. 140 тел.: +380987446464<br><br>
+
+  Дякуємо за дотримання порядку та повагу до сусідів 🙌
 </div>
 
 <div class="modal-bg" id="bookingModal">
@@ -91,6 +114,10 @@ button{padding:10px 16px;border:none;background:#222;color:white;border-radius:8
 
     <label>Телефон</label>
     <input id="phoneInput" type="tel" placeholder="+380971234567 або 0971234567">
+
+    <label>PIN-код для скасування</label>
+    <input id="pinInput" type="password" inputmode="numeric" maxlength="4" placeholder="4 цифри">
+    <small>Запам’ятайте PIN — він потрібен для скасування броні.</small>
 
     <div class="modal-actions">
       <button class="cancel" onclick="closeModal()">Скасувати</button>
@@ -108,6 +135,9 @@ button{padding:10px 16px;border:none;background:#222;color:white;border-radius:8
 
     <label>Телефон, який вказували при бронюванні</label>
     <input id="cancelPhoneInput" type="tel" placeholder="+380971234567 або 0971234567">
+
+    <label>PIN-код</label>
+    <input id="cancelPinInput" type="password" inputmode="numeric" maxlength="4" placeholder="4 цифри">
 
     <div class="modal-actions">
       <button class="cancel" onclick="closeCancelModal()">Закрити</button>
@@ -161,12 +191,17 @@ function normalizePhone(phone){
   return null;
 }
 
+function validatePin(pin){
+  return /^\d{4}$/.test(pin);
+}
+
 function openModal(date){
   selectedDate = date;
   document.getElementById("selectedDateText").innerText = "Дата бронювання: " + date;
   document.getElementById("apartmentInput").value = "";
   document.getElementById("nameInput").value = "";
   document.getElementById("phoneInput").value = "";
+  document.getElementById("pinInput").value = "";
   document.getElementById("bookingModal").style.display = "flex";
 }
 
@@ -179,6 +214,7 @@ async function submitBooking(){
   let apartment = document.getElementById("apartmentInput").value.trim();
   let name = document.getElementById("nameInput").value.trim();
   let phoneRaw = document.getElementById("phoneInput").value.trim();
+  let pin = document.getElementById("pinInput").value.trim();
 
   if(!apartment){
     showToast("❌ Вкажіть номер квартири", "error");
@@ -202,6 +238,16 @@ async function submitBooking(){
     return;
   }
 
+  if(!pin){
+    showToast("❌ Вкажіть PIN-код", "error");
+    return;
+  }
+
+  if(!validatePin(pin)){
+    showToast("❌ PIN-код має складатися з 4 цифр", "error");
+    return;
+  }
+
   let res = await fetch(SUPABASE_URL + "/rest/v1/bookings", {
     method:"POST",
     headers:{
@@ -213,7 +259,8 @@ async function submitBooking(){
       date: selectedDate,
       apartment,
       name,
-      phone
+      phone,
+      pin
     })
   });
 
@@ -233,13 +280,14 @@ async function submitBooking(){
   }
 
   closeModal();
-  showToast("✅ Заброньовано!", "success");
+  showToast("✅ Заброньовано! Збережіть свій PIN-код.", "success");
   loadBookings();
 }
 
 function openCancelModal(){
   document.getElementById("cancelDateInput").value = "";
   document.getElementById("cancelPhoneInput").value = "";
+  document.getElementById("cancelPinInput").value = "";
   document.getElementById("cancelModal").style.display = "flex";
 }
 
@@ -250,6 +298,7 @@ function closeCancelModal(){
 async function cancelBooking(){
   let date = document.getElementById("cancelDateInput").value;
   let phoneRaw = document.getElementById("cancelPhoneInput").value.trim();
+  let pin = document.getElementById("cancelPinInput").value.trim();
 
   if(!date){
     showToast("❌ Вкажіть дату бронювання", "error");
@@ -268,6 +317,16 @@ async function cancelBooking(){
     return;
   }
 
+  if(!pin){
+    showToast("❌ Вкажіть PIN-код", "error");
+    return;
+  }
+
+  if(!validatePin(pin)){
+    showToast("❌ PIN-код має складатися з 4 цифр", "error");
+    return;
+  }
+
   let res = await fetch(SUPABASE_URL + "/rest/v1/rpc/cancel_booking", {
     method:"POST",
     headers:{
@@ -277,7 +336,8 @@ async function cancelBooking(){
     },
     body: JSON.stringify({
       p_date: date,
-      p_phone: phone
+      p_phone: phone,
+      p_pin: pin
     })
   });
 
@@ -289,7 +349,7 @@ async function cancelBooking(){
   let result = await res.text();
 
   if(result.includes("NOT_FOUND")){
-    showToast("❌ Бронь не знайдена або телефон не співпадає", "error");
+    showToast("❌ Бронь не знайдена або телефон/PIN не співпадає", "error");
     return;
   }
 
