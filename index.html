@@ -195,7 +195,17 @@ async function loadBookings(){
 }
 
 function validatePhone(phone){
-  return /^\+380\d{9}$/.test(phone);
+
+  // прибираємо пробіли
+  phone = phone.replace(/\s/g, '');
+
+  // +380XXXXXXXXX
+  const format1 = /^\+380\d{9}$/;
+
+  // 0XXXXXXXXX
+  const format2 = /^0\d{9}$/;
+
+  return format1.test(phone) || format2.test(phone);
 }
 
 async function createBooking(date){
