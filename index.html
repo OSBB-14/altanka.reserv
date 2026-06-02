@@ -2,13 +2,15 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>🏡 Альтанка Booking PRO</title>
+<title>🏡 Бронювання альтанки</title>
 
 <style>
 body{
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background:#f6f7fb;
   text-align:center;
+  margin:0;
+  padding:0 10px 30px;
 }
 
 h2{ margin-top:20px; }
@@ -18,7 +20,7 @@ h2{ margin-top:20px; }
   justify-content:center;
   align-items:center;
   gap:20px;
-  margin:10px;
+  margin:15px 0;
 }
 
 button{
@@ -28,67 +30,66 @@ button{
   color:white;
   border-radius:8px;
   cursor:pointer;
+  font-size:16px;
 }
 
 .calendar{
   display:grid;
   grid-template-columns: repeat(7, 1fr);
   gap:10px;
-  max-width:700px;
+  max-width:760px;
   margin:20px auto;
 }
 
 .day{
-  background:white;
-  border-radius:12px;
+  border-radius:14px;
   padding:12px;
-  min-height:100px;
+  min-height:125px;
   cursor:pointer;
   border:1px solid #ddd;
   transition:0.2s;
   display:flex;
   flex-direction:column;
   align-items:flex-start;
+  text-align:left;
+  word-break:break-word;
 }
 
-.day:hover{
-  transform:scale(1.05);
-}
+.day:hover{ transform:scale(1.04); }
 
 .free{ background:#d6f5d6; }
 .booked{ background:#ffb3b3; pointer-events:none; }
-.disabled{ background:#eee; pointer-events:none; }
+.disabled{ background:#eee; pointer-events:none; color:#999; }
 
 .day-number{
   font-weight:bold;
-  font-size:16px;
+  font-size:18px;
+  margin-bottom:6px;
 }
 
 .info{
-  font-size:12px;
-  margin-top:5px;
-  text-align:left;
+  font-size:13px;
+  line-height:1.45;
 }
 
 .weekday{
   font-weight:bold;
-  font-size:13px;
-  opacity:0.6;
-}
-
-/* Інструкція */
-.instructions{
-  max-width:700px;
-  margin:20px auto;
-  background:white;
-  padding:20px;
-  border-radius:12px;
-  text-align:left;
   font-size:14px;
-  line-height:1.5;
+  opacity:0.65;
 }
 
-/* toast */
+.instructions{
+  max-width:760px;
+  margin:25px auto;
+  background:white;
+  padding:22px;
+  border-radius:14px;
+  text-align:left;
+  font-size:15px;
+  line-height:1.6;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+
 .toast{
   position:fixed;
   bottom:20px;
@@ -99,18 +100,38 @@ button{
   color:white;
   opacity:0;
   transition:0.3s;
+  max-width:90%;
+  z-index:9999;
 }
-.toast.show{ opacity:1; }
 
+.toast.show{ opacity:1; }
 .success{ background:#2ecc71; }
 .error{ background:#e74c3c; }
 
+@media(max-width:700px){
+  .calendar{
+    gap:6px;
+  }
+
+  .day{
+    min-height:105px;
+    padding:8px;
+  }
+
+  .info{
+    font-size:11px;
+  }
+
+  .day-number{
+    font-size:16px;
+  }
+}
 </style>
 </head>
 
 <body>
 
-<h2>🏡 Альтанка Booking</h2>
+<h2>🏡 Бронювання альтанки</h2>
 
 <div class="header">
   <button onclick="prevMonth()">⬅</button>
@@ -120,44 +141,45 @@ button{
 
 <div class="calendar" id="calendar"></div>
 
-<!-- ІНСТРУКЦІЯ -->
 <div class="instructions">
-<b>📋 Правила користування альтанкою:</b><br><br>
+  <b>📋 Правила бронювання та користування альтанкою:</b><br><br>
 
-✔ Кожна квартира може забронювати не більше <b>2 днів на місяць</b>.<br>
-✔ Бронювання доступне тільки на <b>14 днів наперед</b>.<br>
-✔ Один день може бути заброньований тільки <b>однією квартирою</b>.<br>
-✔ Бронювання здійснюється шляхом натискання на вільну дату та заповнення даних.<br>
-✔ Заборонено вносити неправдиву інформацію.<br>
-✔ У разі змін — прохання повідомляти відповідальних осіб.<br><br>
+  ✔ Бронювання доступне лише для співвласників / мешканців будинку.<br>
+  ✔ Один день може бути заброньований тільки однією квартирою.<br>
+  ✔ Одна квартира може забронювати не більше <b>2 днів на місяць</b>.<br>
+  ✔ Бронювання доступне максимум на <b>14 днів наперед</b>.<br>
+  ✔ Для бронювання необхідно заповнити всі поля: номер квартири, ім’я та телефон.<br>
+  ✔ Телефон потрібно вказувати у форматі <b>+380XXXXXXXXX</b>.<br>
+  ✔ Бронювання боржникам по квартплаті не надається.<br>
+  ✔ У разі неявки та нескасування броні завчасно квартира може бути внесена до чорного списку, і в подальшому їй може бути відмовлено в бронюванні.<br>
+  ✔ Після користування альтанкою необхідно прибрати після себе та винести сміття.<br>
+  ✔ Заборонено вносити неправдиві дані або бронювати від імені іншої квартири.<br><br>
 
-<b>🔑 Отримання ключа від альтанки:</b><br><br>
+  <b>🔑 Ключ від альтанки можна отримати у:</b><br><br>
 
-Андрій — кв. 120<br>
-Юрій — кв. 157<br>
-Дмитро — кв. 140<br><br>
+  Андрій — кв. 120<br>
+  Юрій — кв. 157<br>
+  Дмитро — кв. 140<br><br>
 
-Дякуємо за дотримання порядку 🙌
+  Дякуємо за дотримання порядку 🙌
 </div>
 
 <div id="toast" class="toast"></div>
 
 <script>
-
 const SUPABASE_URL = "https://dsnnotagqmjexhxoemzg.supabase.co";
 const SUPABASE_KEY = "sb_publishable_JHN_dMmICNsmBCpniC81xw_WVCiRD7u";
 
 let today = new Date();
 let currentMonth = today.getMonth();
 let currentYear = today.getFullYear();
-
 let bookings = [];
 
 function showToast(msg, type=""){
   let t = document.getElementById("toast");
   t.innerText = msg;
   t.className = "toast show " + type;
-  setTimeout(()=> t.className = "toast", 3000);
+  setTimeout(()=> t.className = "toast", 4000);
 }
 
 async function loadBookings(){
@@ -172,8 +194,71 @@ async function loadBookings(){
   render();
 }
 
-function render(){
+function validatePhone(phone){
+  return /^\+380\d{9}$/.test(phone);
+}
 
+async function createBooking(date){
+  let apartment = prompt("Вкажіть номер квартири:");
+  if(!apartment || !apartment.trim()){
+    showToast("❌ Номер квартири обов’язковий", "error");
+    return;
+  }
+
+  let name = prompt("Вкажіть ім’я:");
+  if(!name || !name.trim()){
+    showToast("❌ Ім’я обов’язкове", "error");
+    return;
+  }
+
+  let phone = prompt("Вкажіть телефон у форматі +380XXXXXXXXX:");
+  if(!phone || !phone.trim()){
+    showToast("❌ Телефон обов’язковий", "error");
+    return;
+  }
+
+  phone = phone.trim();
+
+  if(!validatePhone(phone)){
+    showToast("❌ Телефон має бути у форматі +380XXXXXXXXX", "error");
+    return;
+  }
+
+  let res = await fetch(SUPABASE_URL + "/rest/v1/bookings", {
+    method:"POST",
+    headers:{
+      apikey: SUPABASE_KEY,
+      Authorization: "Bearer " + SUPABASE_KEY,
+      "Content-Type":"application/json"
+    },
+    body: JSON.stringify({
+      date,
+      apartment: apartment.trim(),
+      name: name.trim(),
+      phone
+    })
+  });
+
+  if(!res.ok){
+    let message = "Помилка бронювання";
+
+    try{
+      let err = await res.json();
+      message = err.message || message;
+    }catch(e){
+      message = await res.text();
+    }
+
+    showToast("❌ " + message, "error");
+    loadBookings();
+    return;
+  }
+
+  showToast("✅ Заброньовано!", "success");
+  loadBookings();
+}
+
+function render(){
   const cal = document.getElementById("calendar");
   const title = document.getElementById("monthTitle");
 
@@ -185,28 +270,32 @@ function render(){
   title.innerHTML = `${monthName} ${currentYear}`;
 
   let firstDay = new Date(currentYear, currentMonth, 1).getDay();
-  let daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+  let daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
   const weekdays = ["Пн","Вт","Ср","Чт","Пт","Сб","Нд"];
 
   weekdays.forEach(d=>{
-    let div=document.createElement("div");
-    div.className="weekday";
-    div.innerText=d;
+    let div = document.createElement("div");
+    div.className = "weekday";
+    div.innerText = d;
     cal.appendChild(div);
   });
 
-  for(let i=0;i<(firstDay===0?6:firstDay-1);i++){
+  for(let i=0; i<(firstDay===0 ? 6 : firstDay-1); i++){
     cal.appendChild(document.createElement("div"));
   }
 
   let maxDate = new Date();
+  maxDate.setHours(0,0,0,0);
   maxDate.setDate(maxDate.getDate() + 14);
 
-  for(let d=1; d<=daysInMonth; d++){
+  let todayStart = new Date();
+  todayStart.setHours(0,0,0,0);
 
+  for(let d=1; d<=daysInMonth; d++){
     let date = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     let dateObj = new Date(date);
+    dateObj.setHours(0,0,0,0);
 
     const booking = bookings.find(b => b.date === date);
 
@@ -214,58 +303,32 @@ function render(){
 
     let isBooked = !!booking;
     let isTooFar = dateObj > maxDate;
-    let isPast = dateObj < new Date().setHours(0,0,0,0);
+    let isPast = dateObj < todayStart;
 
-    if(isBooked) div.className="day booked";
-    else if(isTooFar || isPast) div.className="day disabled";
-    else div.className="day free";
+    if(isBooked) div.className = "day booked";
+    else if(isTooFar || isPast) div.className = "day disabled";
+    else div.className = "day free";
 
     let content = `<div class="day-number">${d}</div>`;
 
     if(booking){
       content += `
         <div class="info">
-          🏠 ${booking.apartment}<br>
+          🏠 Кв. ${booking.apartment}<br>
           👤 ${booking.name}<br>
           📞 ${booking.phone}
         </div>
       `;
+    } else if(isTooFar){
+      content += `<div class="info">Недоступно<br>понад 14 днів</div>`;
+    } else if(isPast){
+      content += `<div class="info">Минулі дати<br>недоступні</div>`;
     }
 
     div.innerHTML = content;
 
     if(!isBooked && !isTooFar && !isPast){
-      div.onclick = async () => {
-
-        let apartment = prompt("Квартира:");
-        if(!apartment) return;
-
-        let name = prompt("Ім'я:");
-        if(!name) return;
-
-        let phone = prompt("Телефон:");
-        if(!phone) return;
-
-        let res = await fetch(SUPABASE_URL + "/rest/v1/bookings", {
-          method:"POST",
-          headers:{
-            apikey: SUPABASE_KEY,
-            Authorization: "Bearer " + SUPABASE_KEY,
-            "Content-Type":"application/json"
-          },
-          body: JSON.stringify({date, apartment, name, phone})
-        });
-
-        if(!res.ok){
-          let error = await res.text();
-          showToast(error, "error");
-          loadBookings();
-          return;
-        }
-
-        showToast("✅ Заброньовано!", "success");
-        loadBookings();
-      }
+      div.onclick = () => createBooking(date);
     }
 
     cal.appendChild(div);
@@ -274,8 +337,8 @@ function render(){
 
 function nextMonth(){
   currentMonth++;
-  if(currentMonth>11){
-    currentMonth=0;
+  if(currentMonth > 11){
+    currentMonth = 0;
     currentYear++;
   }
   render();
@@ -283,8 +346,8 @@ function nextMonth(){
 
 function prevMonth(){
   currentMonth--;
-  if(currentMonth<0){
-    currentMonth=11;
+  if(currentMonth < 0){
+    currentMonth = 11;
     currentYear--;
   }
   render();
@@ -292,7 +355,6 @@ function prevMonth(){
 
 setInterval(loadBookings, 3000);
 loadBookings();
-
 </script>
 
 </body>
