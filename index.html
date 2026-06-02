@@ -23,7 +23,6 @@ button{padding:10px 16px;border:none;background:#222;color:white;border-radius:8
 .toast.show{opacity:1}
 .success{background:#2ecc71}
 .error{background:#e74c3c}
-
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;align-items:center;justify-content:center}
 .modal{background:white;width:90%;max-width:420px;border-radius:16px;padding:22px;text-align:left;box-shadow:0 8px 30px rgba(0,0,0,.25)}
 .modal h3{text-align:center;margin-top:0}
@@ -33,7 +32,6 @@ button{padding:10px 16px;border:none;background:#222;color:white;border-radius:8
 .modal-actions button{flex:1}
 .cancel{background:#777}
 .book{background:#1f8f4d}
-
 @media(max-width:700px){
   .calendar{gap:6px}
   .day{min-height:105px;padding:8px}
@@ -51,6 +49,10 @@ button{padding:10px 16px;border:none;background:#222;color:white;border-radius:8
   <button onclick="prevMonth()">⬅</button>
   <div id="monthTitle"></div>
   <button onclick="nextMonth()">➡</button>
+</div>
+
+<div style="margin:10px;">
+  <button onclick="openCancelModal()">Скасувати бронь</button>
 </div>
 
 <div class="calendar" id="calendar"></div>
@@ -93,6 +95,23 @@ button{padding:10px 16px;border:none;background:#222;color:white;border-radius:8
     <div class="modal-actions">
       <button class="cancel" onclick="closeModal()">Скасувати</button>
       <button class="book" onclick="submitBooking()">Забронювати</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="cancelModal">
+  <div class="modal">
+    <h3>❌ Скасування броні</h3>
+
+    <label>Дата бронювання</label>
+    <input id="cancelDateInput" type="date">
+
+    <label>Телефон, який вказували при бронюванні</label>
+    <input id="cancelPhoneInput" type="tel" placeholder="+380971234567 або 0971234567">
+
+    <div class="modal-actions">
+      <button class="cancel" onclick="closeCancelModal()">Закрити</button>
+      <button class="book" onclick="cancelBooking()">Скасувати</button>
     </div>
   </div>
 </div>
@@ -144,14 +163,10 @@ function normalizePhone(phone){
 
 function openModal(date){
   selectedDate = date;
-
-  document.getElementById("selectedDateText").innerText =
-    "Дата бронювання: " + date;
-
+  document.getElementById("selectedDateText").innerText = "Дата бронювання: " + date;
   document.getElementById("apartmentInput").value = "";
   document.getElementById("nameInput").value = "";
   document.getElementById("phoneInput").value = "";
-
   document.getElementById("bookingModal").style.display = "flex";
 }
 
@@ -219,6 +234,67 @@ async function submitBooking(){
 
   closeModal();
   showToast("✅ Заброньовано!", "success");
+  loadBookings();
+}
+
+function openCancelModal(){
+  document.getElementById("cancelDateInput").value = "";
+  document.getElementById("cancelPhoneInput").value = "";
+  document.getElementById("cancelModal").style.display = "flex";
+}
+
+function closeCancelModal(){
+  document.getElementById("cancelModal").style.display = "none";
+}
+
+async function cancelBooking(){
+  let date = document.getElementById("cancelDateInput").value;
+  let phoneRaw = document.getElementById("cancelPhoneInput").value.trim();
+
+  if(!date){
+    showToast("❌ Вкажіть дату бронювання", "error");
+    return;
+  }
+
+  if(!phoneRaw){
+    showToast("❌ Вкажіть телефон", "error");
+    return;
+  }
+
+  let phone = normalizePhone(phoneRaw);
+
+  if(!phone){
+    showToast("❌ Невірний формат телефону", "error");
+    return;
+  }
+
+  let res = await fetch(SUPABASE_URL + "/rest/v1/rpc/cancel_booking", {
+    method:"POST",
+    headers:{
+      apikey: SUPABASE_KEY,
+      Authorization: "Bearer " + SUPABASE_KEY,
+      "Content-Type":"application/json"
+    },
+    body: JSON.stringify({
+      p_date: date,
+      p_phone: phone
+    })
+  });
+
+  if(!res.ok){
+    showToast("❌ Не вдалося скасувати бронь", "error");
+    return;
+  }
+
+  let result = await res.text();
+
+  if(result.includes("NOT_FOUND")){
+    showToast("❌ Бронь не знайдена або телефон не співпадає", "error");
+    return;
+  }
+
+  closeCancelModal();
+  showToast("✅ Бронь скасовано", "success");
   loadBookings();
 }
 
